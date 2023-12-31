@@ -3,8 +3,10 @@ const app = express();
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const bcrypt = require("bcryptjs"); // Added for password hashing
-const jwt = require("jsonwebtoken"); // Added for generating JWTs
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 require("dotenv").config();
 
@@ -27,6 +29,19 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model("User", userSchema);
+
+passport.use(
+  new GoogleStrategy({
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_APP_CALLBACK_URL, // Adjust accordingly
+  },
+  (accessToken, refreshToken, profile, done) => {
+      // Handle user profile information here
+      done(null, profile);
+  }
+));
+
 
 // Signup API endpoint
 app.post("/api/signup", async (req, res) => {
@@ -80,6 +95,31 @@ app.post("/api/signup", async (req, res) => {
       res.status(500).json({ message: "Error creating or signing in user" });
     }
   });
+
+  app.get('/auth/google', passport.authenticate('google'));
+
+app.get('/auth/google/callback', passport.authenticate('google', {
+    successRedirect: '/', // Redirect to home page on success
+    failureRedirect: '/login', // Redirect to login page on failure
+}));
+
+
+app.post('/signup', async (req, res) => {
+  // ... existing signup logic
+
+  if (req.user) {
+      // User is already signed in with Google
+      return res.json({ message: 'User already signed in' });
+  }
+
+  try {
+      await passport.authenticate('google', { session: false })(req, res);
+      res.json({ message: 'User successfully signed in with Google' });
+  } catch (err) {
+      res.status(500).json({ message: 'Error signing in with Google' });
+  }
+});
+
 
 app.get('', (req, res) => {
     res.send("Hello World")
