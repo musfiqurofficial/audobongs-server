@@ -8,19 +8,18 @@ const jwt = require("jsonwebtoken");
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
-require("dotenv").config();
+dotenv.config();
 
 app.use(express.json());
 app.use(cors());
 
-dotenv.config();
 
 const database = process.env.MONGOLAB_URI;
 
-mongoose
-  .connect(database, { useUnifiedTopology: true, useNewUrlParser: true })
-  .then(() => console.log("Mongodb connected"))
-  .catch((err) => console.log(err));
+  mongoose
+    .connect(database, { useUnifiedTopology: true, useNewUrlParser: true })
+    .then(() => console.log("Mongodb connected"))
+    .catch((err) => console.log(err));
 
 // User schema with unique email index
 const userSchema = new mongoose.Schema({
